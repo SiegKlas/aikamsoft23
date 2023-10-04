@@ -3,11 +3,11 @@ package ru.michael.aikamsoft23.json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
-public class SearchOutput {
-    private String type;
-    private List<SearchResult> results;
+public class PurchaseStat {
+    private String name;
+    private BigDecimal expenses;
 }

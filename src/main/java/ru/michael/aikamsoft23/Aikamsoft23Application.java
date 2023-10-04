@@ -48,6 +48,9 @@ public class Aikamsoft23Application {
             purchaseRepository.save(new Purchase(customer1, product2, LocalDate.now()));
             purchaseRepository.save(new Purchase(customer2, product1, LocalDate.now()));
             purchaseRepository.save(new Purchase(customer2, product2, LocalDate.now()));
+            purchaseRepository.save(new Purchase(customer2, product2, LocalDate.of(2021, 3, 22)));
+            purchaseRepository.save(new Purchase(customer2, product2, LocalDate.of(2021, 3, 22)));
+            purchaseRepository.save(new Purchase(customer2, product2, LocalDate.of(2022, 3, 22)));
             purchaseRepository.save(new Purchase(customer2, product3, LocalDate.now()));
             purchaseRepository.save(new Purchase(customer3, product3, LocalDate.now()));
             purchaseRepository.save(new Purchase(customer4, product3, LocalDate.now()));

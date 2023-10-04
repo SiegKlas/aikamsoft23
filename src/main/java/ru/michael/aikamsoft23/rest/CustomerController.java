@@ -6,28 +6,42 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import ru.michael.aikamsoft23.json.CriteriaContainer;
 import ru.michael.aikamsoft23.data.Customer;
-import ru.michael.aikamsoft23.json.SearchOutput;
+import ru.michael.aikamsoft23.json.CustomerStat;
+import ru.michael.aikamsoft23.json.PurchaseStat;
 import ru.michael.aikamsoft23.json.SearchResult;
+import ru.michael.aikamsoft23.json.input.CriteriasRequest;
+import ru.michael.aikamsoft23.json.input.StatRequest;
+import ru.michael.aikamsoft23.json.output.OutputType;
+import ru.michael.aikamsoft23.json.output.SearchResponse;
+import ru.michael.aikamsoft23.json.output.StatResponse;
 import ru.michael.aikamsoft23.repositories.CustomerRepository;
+import ru.michael.aikamsoft23.repositories.PurchaseRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class CustomerController {
     private final CustomerRepository customerRepository;
+    private final PurchaseRepository purchaseRepository;
 
     @Autowired
-    public CustomerController(CustomerRepository customerRepository) {
+    public CustomerController(CustomerRepository customerRepository, PurchaseRepository purchaseRepository) {
         this.customerRepository = customerRepository;
+        this.purchaseRepository = purchaseRepository;
     }
 
     @GetMapping("/search")
-    public ResponseEntity<?> searchCustomers(@RequestBody CriteriaContainer criteriaContainer) {
+    public ResponseEntity<?> searchCustomers(@RequestBody CriteriasRequest criterias) {
         List<SearchResult> results = new ArrayList<>();
-        for (var criteria : criteriaContainer.getCriterias()) {
+        for (var criteria : criterias.getCriterias()) {
             List<Customer> customers = new ArrayList<>();
             if (criteria.getLastName() != null) {
                 customers.addAll(customerRepository.readCustomersByLastName(criteria.getLastName()));
@@ -49,6 +63,39 @@ public class CustomerController {
             }
             results.add(new SearchResult(criteria, customers));
         }
-        return ResponseEntity.ok(new SearchOutput("search", results));
+        return ResponseEntity.ok(new SearchResponse(OutputType.search, results));
+    }
+
+    @GetMapping("/stat")
+    public ResponseEntity<?> findStat(@RequestBody StatRequest statRange) {
+        LocalDate from = statRange.getStartDate();
+        LocalDate to = statRange.getEndDate();
+        Integer daysDiff = (int) ChronoUnit.DAYS.between(from, to);
+        List<Object[]> objects = purchaseRepository.getCustomerStatistics(from, to);
+        Map<String, List<PurchaseStat>> namePurchase = new HashMap<>();
+        for (var object : objects) {
+            String name = object[0] + " " + object[1];
+            String purchaseName = (String) object[2];
+            BigDecimal expenses = (BigDecimal) object[3];
+
+            PurchaseStat purchaseStat = new PurchaseStat(purchaseName, expenses);
+            if (namePurchase.containsKey(name)) {
+                namePurchase.get(name).add(purchaseStat);
+            } else {
+                namePurchase.put(name, new ArrayList<>(List.of(purchaseStat)));
+            }
+        }
+        List<CustomerStat> customers = new ArrayList<>();
+        namePurchase.forEach((k, v) -> {
+            BigDecimal totalExpenses =
+                    v.stream().map(PurchaseStat::getExpenses).reduce(BigDecimal::add).orElse(new BigDecimal(0));
+            customers.add(new CustomerStat(k, v, totalExpenses));
+        });
+        BigDecimal totalExpenses =
+                customers.stream().map(CustomerStat::getTotalExpenses).reduce(BigDecimal::add).orElse(new BigDecimal(0));
+        BigDecimal avgExpenses = totalExpenses.divide(new BigDecimal(customers.size()), RoundingMode.CEILING);
+        return ResponseEntity.ok(
+                new StatResponse(OutputType.stat, daysDiff, customers, totalExpenses, avgExpenses)
+        );
     }
 }
