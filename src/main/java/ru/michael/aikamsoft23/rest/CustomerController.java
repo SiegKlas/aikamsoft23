@@ -93,7 +93,10 @@ public class CustomerController {
         });
         BigDecimal totalExpenses =
                 customers.stream().map(CustomerStat::getTotalExpenses).reduce(BigDecimal::add).orElse(new BigDecimal(0));
-        BigDecimal avgExpenses = totalExpenses.divide(new BigDecimal(customers.size()), RoundingMode.CEILING);
+        BigDecimal avgExpenses = BigDecimal.ZERO;
+        if (!customers.isEmpty()) {
+            avgExpenses = totalExpenses.divide(new BigDecimal(customers.size()), RoundingMode.CEILING);
+        }
         return ResponseEntity.ok(
                 new StatResponse(OutputType.stat, daysDiff, customers, totalExpenses, avgExpenses)
         );
