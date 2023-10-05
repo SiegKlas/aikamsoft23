@@ -1,5 +1,6 @@
 package ru.michael.aikamsoft23;
 
+import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import ru.michael.aikamsoft23.json.input.CriteriasRequest;
 import ru.michael.aikamsoft23.json.input.StatRequest;
+import ru.michael.aikamsoft23.json.output.ErrorResponse;
+import ru.michael.aikamsoft23.json.output.OutputType;
 import ru.michael.aikamsoft23.rest.CustomerController;
 
 import java.io.File;
@@ -37,13 +40,28 @@ public class Aikamsoft23Application {
 
             ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
             if (Objects.equals(operationType, "stat")) {
-                StatRequest statRequest = objectMapper.readValue(new File(inputFile), StatRequest.class);
-                var e = customerController.findStat(statRequest);
-                objectMapper.writeValue(new File(outputFile), e.getBody());
+                try {
+                    StatRequest statRequest = objectMapper.readValue(new File(inputFile), StatRequest.class);
+                    var e = customerController.findStat(statRequest);
+                    objectMapper.writeValue(new File(outputFile), e.getBody());
+                } catch (DatabindException exception) {
+                    objectMapper.writeValue(
+                            new File(outputFile),
+                            new ErrorResponse(OutputType.error, "Wrong date input")
+                    );
+                }
             } else if (Objects.equals(operationType, "search")) {
-                CriteriasRequest criteriasRequest = objectMapper.readValue(new File(inputFile), CriteriasRequest.class);
-                var e = customerController.searchCustomers(criteriasRequest);
-                objectMapper.writeValue(new File(outputFile), e.getBody());
+                try {
+                    CriteriasRequest criteriasRequest = objectMapper.readValue(new File(inputFile),
+                            CriteriasRequest.class);
+                    var e = customerController.searchCustomers(criteriasRequest);
+                    objectMapper.writeValue(new File(outputFile), e.getBody());
+                } catch (DatabindException exception) {
+                    objectMapper.writeValue(
+                            new File(outputFile),
+                            new ErrorResponse(OutputType.error, "Wrong search input")
+                    );
+                }
             }
 
             System.exit(0);
