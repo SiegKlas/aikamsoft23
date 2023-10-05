@@ -34,6 +34,10 @@ public class Aikamsoft23Application {
     @Bean
     public CommandLineRunner dataLoader() {
         return args -> {
+            if (args.length < 3) {
+                System.err.println("Usage: java -jar aikamsoft23.jar request_type input.json output.json");
+                System.exit(1);
+            }
             String operationType = args[0];
             String inputFile = args[1];
             String outputFile = args[2];
