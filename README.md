@@ -4,9 +4,10 @@
 
 Инструкция для БД:
 1. docker pull postgres
-2. docker run --name my-postgres-container -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-3. docker cp "путь до"\dump.sql "id контейнера":/tmp/dump.sql
-4. psql -h localhost -U postgres -d postgres < /tmp/dump.sql
+2. docker run --name my-postgres-container -e POSTGRES_PASSWORD=123 -p 5432:5432 -d postgres
+3. Узнать id контейнера: docker ps
+4. docker cp "путь до"\dump.sql "id контейнера":/tmp/dump.sql
+5. psql -h localhost -U postgres -d postgres < /tmp/dump.sql
 
 Опционально. Убедиться, что все сработало
 5. psql -h localhost -U postgres -d postgres
